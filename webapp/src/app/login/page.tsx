@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/browser";
+import { supabase } from "@/app/supabase/browser";
 import { useRouter } from "next/navigation";
+import { Card } from "@/app/ui/components/Card";
+import { Field } from "@/app/ui/components/Field";
+import { Button } from "@/app/ui/components/Button";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,43 +43,32 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
-    <main style={{ padding: 24, maxWidth: 420 }}>
-      <h1>Login</h1>
-
-      <form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
-        <label>
-          Email
+    <Card title="Login" subtitle="Accedi con email e password.">
+      <form onSubmit={onSubmit} className="grid gap-4">
+        <Field label="Email">
           <input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
             inputMode="email"
-            style={{ width: "100%" }}
-            className="h-11 w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 text-sm outline-none focus:border-neutral-600"
           />
-        </label>
+        </Field>
 
-        <label>
-          Password
+        <Field label="Password">
           <input
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             type="password"
             autoComplete="current-password"
-            style={{ width: "100%" }}
-             className="h-11 w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 text-sm outline-none focus:border-neutral-600"
           />
-        </label>
+        </Field>
 
-        <button disabled={loading} className="h-11 w-full rounded-xl bg-neutral-100 text-sm font-semibold text-neutral-950 disabled:opacity-60"
->
+        <Button   disabled={loading} variant="primary">
           {loading ? "Accesso..." : "Entra"}
-        </button>
+        </Button >
 
-        {status && <p>{status}</p>}
+        {status && <p className="gf-help">{status}</p>}
       </form>
-    </main>
-    </div>
+    </Card>
   );
 }

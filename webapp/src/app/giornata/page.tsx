@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/browser";
+import { supabase } from "@/app/supabase/browser";
 import { useRouter } from "next/navigation";
+import { Card } from "@/app/ui/components/Card";
+import { Field } from "@/app/ui/components/Field";
+import { Button } from "@/app/ui/components/Button";
 
 export default function GiornataPage() {
   const router = useRouter();
@@ -21,10 +24,19 @@ export default function GiornataPage() {
   }
 
   return (
-    <main style={{ padding: 24 }}>
-      <h1>Giornata</h1>
-      <p>Utente: {email}</p>
-      <button onClick={logout}>Logout</button>
-    </main>
+<Card
+  title="Inserimento attività"
+  subtitle="Compila le attività della giornata e conferma."
+  meta={email}
+  actions={
+    <Button size="sm" variant="secondary" onClick={logout}>
+      Logout
+    </Button>
+  }
+>
+    <h2 className="mb-1">Giornata</h2>
+  <p className="gf-help">Utente: {email}</p>
+     
+  </Card>
   );
 }
