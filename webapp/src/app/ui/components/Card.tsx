@@ -2,34 +2,24 @@ export function Card({
   children,
   title,
   subtitle,
-  meta,
   actions,
 }: {
   children: React.ReactNode;
   title?: string;
   subtitle?: string;
-  meta?: React.ReactNode;
   actions?: React.ReactNode;
 }) {
   return (
     <section className="gf-card">
-      {(title || subtitle || meta || actions) && (
-        <div className="mb-4 flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            {title && <h1 className="text-xl font-semibold text-slate-900">{title}</h1>}
-            {subtitle && <p className="mt-1 text-sm text-slate-600">{subtitle}</p>}
-          </div>
-
-          {(meta || actions) && (
-            <div className="flex items-center gap-3">
-              {meta && (
-                <div className="max-w-[220px] truncate rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                  {meta}
-                </div>
-              )}
-              {actions}
+      {(title || subtitle || actions) && (
+        <div className="mb-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              {title && <h2 className="text-lg font-semibold text-slate-900">{title}</h2>}
             </div>
-          )}
+            {actions && <div className="shrink-0">{actions}</div>}
+          </div>
+          {subtitle && <p className="mt-2 text-sm text-slate-600">{subtitle}</p>}
         </div>
       )}
 
