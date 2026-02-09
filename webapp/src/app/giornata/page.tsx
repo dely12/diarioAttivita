@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react"; 
 import { supabase } from "@/app/supabase/browser";
 import { useRouter } from "next/navigation";
-import { Card } from "@/app/ui/components/Card";
 import { Field } from "@/app/ui/components/Field";
 import { Button } from "@/app/ui/components/Button";
 import { getOrCreateToday } from "@/lib/data/days";
@@ -24,6 +23,8 @@ const [attivita, setAttivita] = useState("");
 const [minutes, setMinutes] = useState(30); 
 const totalMinutes = entries.reduce((sum, e) => sum + (e.minutes ?? 0), 0);
 const targetMinutes = 480; 
+const [authChecked, setAuthChecked] = useState(false);
+const [userOk, setUserOk] = useState(false);
 
 let barClass = "bg-slate-300";
 if (totalMinutes === targetMinutes) barClass = "bg-green-600";
@@ -33,7 +34,13 @@ if (totalMinutes > targetMinutes) barClass = "bg-red-600";
   useEffect(() => {
      (async () => {
       const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user) return router.replace("/login");
+      setAuthChecked(true);
+      if (error || !data.user) {
+      setUserOk(false);
+      router.replace("/login");
+      return;
+    }
+       setUserOk(true);
 
       setEmail(data.user.email ?? "(no email)");
 
@@ -77,7 +84,8 @@ async function onDelete(id: string) {
    await supabase.auth.signOut();   
    router.replace("/login");
   }
-
+if (!authChecked) return null;        // oppure “Caricamento…”
+if (!userOk) return null;   
   return (
    <Stack gap={6}>
   <FormCard title="Aggiungi attività" subtitle="Inserisci una riga e aggiungila.">

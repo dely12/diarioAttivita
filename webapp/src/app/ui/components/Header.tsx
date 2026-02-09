@@ -24,6 +24,10 @@ export function AppHeader() {
     }
 
     load();
+    // dopo load auth
+      if (!loading && !email && pathname !== "/login") {
+        router.replace("/login");
+      }
 
     // opzionale ma utile: se cambia sessione, aggiorna header
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -34,7 +38,7 @@ export function AppHeader() {
       mounted = false;
       sub.subscription.unsubscribe();
     };
-  }, []);
+  },[loading, email, pathname, router]);
 
   async function logout() {
     await supabase.auth.signOut();
