@@ -32,7 +32,7 @@ export function MinutesProgress({
 
       {totalMinutes > targetMinutes && (
         <p className="text-sm text-red-700">
-          Hai superato le 8 ore: riduci i minuti o verifica gli inserimenti.
+          Hai superato le 8 ore.
         </p>
       )}
     </Stack>

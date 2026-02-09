@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/app/supabase/browser";
 import { useRouter } from "next/navigation";
-import { Card } from "@/app/ui/components/Card";
 import { Field } from "@/app/ui/components/Field";
 import { Button } from "@/app/ui/components/Button";
+import { Stack } from "@/app/ui/components/Stack";
+import { FormCard } from "@/app/ui/components/FormCard";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,32 +44,25 @@ export default function LoginPage() {
   }
 
   return (
-    <Card title="Login" subtitle="Accedi con email e password.">
-      <form onSubmit={onSubmit} className="grid gap-4">
-        <Field label="Email">
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-            inputMode="email"
-          />
-        </Field>
+       <form onSubmit={onSubmit}  > 
+   <Stack gap={6}>
+  <FormCard title="Login" subtitle="Accedi con mail e password.">
+   
+   <Field label="Email">
+      <input value={email} onChange={(e) => setEmail(e.target.value)} />
+    </Field>
+    <Field label="Password">
+      <input value={password} type="password" onChange={(e) => setPassword(e.target.value)} />
+    </Field>
+    <Button  disabled={loading} >
+      {loading ? "Accesso..." : "Entra"}
+    </Button>
+ 
+             {status && <p className="gf-help">{status}</p>}
+   
+    </FormCard>
+  </Stack>
 
-        <Field label="Password">
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            type="password"
-            autoComplete="current-password"
-          />
-        </Field>
-
-        <Button   disabled={loading} variant="primary">
-          {loading ? "Accesso..." : "Entra"}
-        </Button >
-
-        {status && <p className="gf-help">{status}</p>}
       </form>
-    </Card>
   );
 }

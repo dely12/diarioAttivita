@@ -10,19 +10,20 @@ import { Stack } from "@/app/ui/components/Stack";
 import { FormCard } from "@/app/ui/components/FormCard";
 import { listEntries, addEntry, deleteEntry, Entry } from "@/lib/data/entries";
 import { MinutesProgress } from "@/app/ui/components/MinutesProgress";
+import { EntryList } from "@/app/ui/components/EntryList";
 
 export default function GiornataPage() {
   const router = useRouter();
   const [email, setEmail] = useState<string>("...");
   const [day, setDay] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingEntries, setLoadingEntries] = useState(true);
   const [entries, setEntries] = useState<Entry[]>([]);
 const [commessa, setCommessa] = useState("");
 const [attivita, setAttivita] = useState("");
 const [minutes, setMinutes] = useState(30); 
 const totalMinutes = entries.reduce((sum, e) => sum + (e.minutes ?? 0), 0);
-const targetMinutes = 480;
-const ratio = Math.min(totalMinutes / targetMinutes, 1);
+const targetMinutes = 480; 
 
 let barClass = "bg-slate-300";
 if (totalMinutes === targetMinutes) barClass = "bg-green-600";
@@ -38,13 +39,16 @@ if (totalMinutes > targetMinutes) barClass = "bg-red-600";
 
       try {
         const d = await getOrCreateToday();
+       
+        setLoadingEntries(true);
+
         const rows = await listEntries(d.id);
         setEntries(rows);
         setDay(d);
       } catch (e) {
         console.error(e);
       } finally {
-        setLoading(false);
+        setLoadingEntries(false);
       }
     })();
   }, [router]);
@@ -77,6 +81,8 @@ async function onDelete(id: string) {
   return (
    <Stack gap={6}>
   <FormCard title="Aggiungi attività" subtitle="Inserisci una riga e aggiungila.">
+  
+
     <Field label="Commessa (codice)">
       <input value={commessa} onChange={(e) => setCommessa(e.target.value)} />
     </Field>
@@ -102,35 +108,15 @@ async function onDelete(id: string) {
 
   </FormCard>
 
-  <Card title="Riepilogo">
-    <Stack gap={4}>
-        <h2 className="gf-section-title">Righe inserite</h2>
-
-        {entries.length === 0 ? (
-          <p className="gf-help">Nessuna riga ancora.</p>
-        ) : (
-          <div className="grid gap-2">
-            {entries.map((e) => (
-              <div key={e.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3">
-                <div className="min-w-0">
-                  <div className="text-sm font-medium text-slate-900">
-                    {e.codcommessa} · {e.codattivita}
-                  </div>
-                  <div className="text-xs text-slate-600">
-                    {e.minutes} min{  ""}
-                  </div>
-                </div>
-
-                <Button size="sm" variant="secondary" onClick={() => onDelete(e.id)}>
-                  Elimina
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-    </Stack>
-  </Card>
+  <FormCard title="Riepilogo">
+    {loadingEntries ? (
+    <p className="gf-help">Caricamento riepilogo…</p>
+  ) : (
+     <EntryList entries={entries} onDelete={onDelete} />
+     )}
+  </FormCard>
 </Stack>
+ 
 
   );
 }
