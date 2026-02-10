@@ -5,10 +5,29 @@ export type Entry = {
   day_id: string;
   user_id: string;
   codcommessa: string;
-  codattivita: string;
+  codattivita: string; 
   minutes: number;
   created_at: string;
 };
+export async function updateEntry(
+  id: string,
+  input: { codcommessa: string; codattivita: string; minutes: number }
+  
+): Promise<Entry> { 
+  const { data, error } = await supabase
+    .from("entries")
+    .update({
+      codcommessa: input.codcommessa,
+      codattivita: input.codattivita,
+      minutes: input.minutes,
+    })
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return data as Entry;
+}
 
 export async function listEntries(dayId: string): Promise<Entry[]> {
   const { data, error } = await supabase
@@ -23,9 +42,10 @@ export async function listEntries(dayId: string): Promise<Entry[]> {
 
 export async function addEntry(input: {
   day_id: string;
-  codcommessa: string;
-  codattivita: string;
+  codcommessa: string; 
+  codattivita: string; 
   minutes: number;
+  
 }): Promise<Entry> {
   const { data, error } = await supabase
     .from("entries")

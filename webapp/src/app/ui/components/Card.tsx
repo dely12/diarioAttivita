@@ -3,14 +3,16 @@ export function Card({
   title,
   subtitle,
   actions,
+  accent = true,
 }: {
   children: React.ReactNode;
   title?: string;
   subtitle?: string;
   actions?: React.ReactNode;
+  accent?: boolean; // default true
 }) {
   return (
-    <section className="gf-card">
+    <section  className= {`gf-card ${accent ? "gf-card--accent" : ""}`}>
       {(title || subtitle || actions) && (
         <div className="mb-4">
           <div className="flex items-start justify-between gap-4">

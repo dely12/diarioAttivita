@@ -15,8 +15,7 @@ export function MinutesProgress({
 
   return (
     <Stack gap={2}>
-      <div className="flex items-baseline justify-between">
-        <h2 className="gf-section-title">Riepilogo</h2>
+      <div className="flex items-baseline justify-between"> 
 
         <div className="text-sm text-slate-700">
           <strong>{totalMinutes}</strong> min{" "}
@@ -31,8 +30,8 @@ export function MinutesProgress({
       </div>
 
       {totalMinutes > targetMinutes && (
-        <p className="text-sm text-red-700">
-          Hai superato le 8 ore.
+        <p className="text-sm text-orange-700">
+          Hai superato le 8 ore. Verifica  prima di confermare.
         </p>
       )}
     </Stack>

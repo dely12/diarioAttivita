@@ -12,26 +12,24 @@ export function todayISODate(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export async function getOrCreateDayByDate(date: string): Promise<Day> {
-  const { data: existing, error: selectError } = await supabase
+export async function getDayByDate(date: string) {
+  const { data, error } = await supabase
     .from("days")
     .select("*")
     .eq("date", date)
     .maybeSingle();
 
-  if (selectError) throw selectError;
-  if (existing) return existing as Day;
-
-  const { data: created, error: insertError } = await supabase
+  if (error) throw error;
+  return data; // può essere null
+}
+export async function createDay(date: string) {
+  const { data, error } = await supabase
     .from("days")
     .insert({ date })
     .select("*")
     .single();
 
-  if (insertError) throw insertError;
-  return created as Day;
+  if (error) throw error;
+  return data;
 }
 
-export async function getOrCreateToday(): Promise<Day> {
-  return getOrCreateDayByDate(todayISODate());
-}
