@@ -8,6 +8,8 @@ export type Day = {
   created_at: string;
 };
 
+export type DayStatus = "OPEN" | "SUBMITTED" | "LOCKED";
+
 export function todayISODate(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -33,3 +35,25 @@ export async function createDay(date: string) {
   return data;
 }
 
+export async function listDays() {
+  const { data, error } = await supabase
+    .from("days")
+    .select("id,date,status")
+    .order("date", { ascending: false });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function setDayStatus(dayId: string, status: DayStatus) {
+  const { data, error } = await supabase
+    .from("days")
+    .update({ status })
+    .eq("id", dayId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+ 

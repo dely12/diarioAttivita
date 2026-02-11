@@ -6,7 +6,7 @@ export function Card({
   accent = true,
 }: {
   children: React.ReactNode;
-  title?: string;
+  title?: React.ReactNode;
   subtitle?: string;
   actions?: React.ReactNode;
   accent?: boolean; // default true

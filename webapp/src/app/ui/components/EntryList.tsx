@@ -18,6 +18,7 @@ export function EntryList({
   resolveAttivita, 
   onEdit,
   editingId,
+  readOnly,
 }: { 
   
 
@@ -27,6 +28,7 @@ export function EntryList({
   resolveAttivita?: (code: string) => string; 
   onEdit?: (id: string) => void;
   editingId?: string | null;
+  readOnly?: boolean;
 
 }) {
   return (

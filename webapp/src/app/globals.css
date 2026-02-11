@@ -30,18 +30,18 @@
   input:not([type="range"]),
   textarea,
   select {
-    @apply mt-1 h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-[15px]
-           outline-none transition
-           focus:border-blue-500 focus:ring-4 focus:ring-blue-100;
+     @apply h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-[15px]
+         outline-none transition
+         focus:border-blue-500 focus:ring-4 focus:ring-blue-100;
   }
-
+/*
   button {
     @apply inline-flex h-11 items-center justify-center rounded-lg bg-blue-600 px-4
            text-sm font-semibold text-white transition
            hover:bg-blue-700 active:bg-blue-800
            disabled:opacity-60;
   }
-
+*/
   a {
     @apply text-blue-700 hover:underline;
   }
@@ -65,7 +65,10 @@
 .gf-text { @apply text-sm text-slate-900; }
 .gf-muted { @apply text-xs text-slate-600; }
 .gf-help { @apply text-sm text-slate-600; } 
-
+.gf-btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg font-medium transition
+         focus:outline-none focus:ring-4 disabled:opacity-60;
+}
 
 }
 

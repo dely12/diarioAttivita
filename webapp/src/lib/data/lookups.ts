@@ -1,6 +1,9 @@
 import { supabase } from "@/app/supabase/browser";
 
 export type LookupOption = { value: string; label: string };
+export type AttivitaOption = LookupOption & {
+  codcommessacorrispondente?: string | null;
+};
 
 export async function listCommesse(): Promise<LookupOption[]> {
   const { data, error } = await supabase
@@ -19,7 +22,7 @@ export async function listCommesse(): Promise<LookupOption[]> {
 export async function listAttivita(): Promise<LookupOption[]> {
   const { data, error } = await supabase
     .from("attivita")
-    .select("codattivita, descrizione")
+   .select("codattivita, descrizione, codcommessacorrispondente")
     .eq("attiva", true)
     .order("codattivita", { ascending: true });
 
@@ -27,5 +30,6 @@ export async function listAttivita(): Promise<LookupOption[]> {
   return (data ?? []).map((r) => ({
     value: r.codattivita,
     label: `${r.codattivita} · ${r.descrizione}`,
+     codcommessacorrispondente: r.codcommessacorrispondente ?? null,
   }));
 }

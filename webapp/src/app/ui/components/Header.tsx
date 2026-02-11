@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/app/supabase/browser";
 import { Button } from "@/app/ui/components/Button";
 import { LogOut } from "lucide-react";
+import { NavMenu, defaultNavItems } from "@/app/ui/components/NavMenu";
 
 export function AppHeader() {
   const router = useRouter();
@@ -51,6 +52,11 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-3">
+         {/* LEFT: hamburger */}
+        <div className="shrink-0">
+          <NavMenu items={defaultNavItems} />
+        </div>
+         {/* CENTER: app name + email */}
         <div className="min-w-0">
           <div className="text-sm font-semibold text-slate-900">Diario Attività</div>
           <div className="text-xs text-slate-600 truncate">

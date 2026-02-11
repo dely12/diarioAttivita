@@ -42,7 +42,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.replace("/giornata");
+    router.replace("/riepilogogiornate");
   }
 
   return (
