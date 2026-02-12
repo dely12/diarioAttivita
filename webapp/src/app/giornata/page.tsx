@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState, useRef } from "react";
-import { supabase } from "@/app/supabase/browser";
+import { getSupabaseBrowser } from "@/app/supabase/browser";
+
 import { useRouter, useSearchParams } from "next/navigation";
 import { Field } from "@/app/ui/components/Field";
 import { Button } from "@/app/ui/components/Button";
@@ -155,6 +156,7 @@ export default function GiornataPage() {
 
   useEffect(() => {
     (async () => {
+      const supabase = getSupabaseBrowser();
       const { data, error } = await supabase.auth.getUser();
       setAuthChecked(true);
 

@@ -3,6 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+   "sb:dev:link": "node -e \"require('dotenv').config({path:'.env.supabase.dev'}); require('child_process').execSync('npx supabase link --project-ref ' + process.env.SUPABASE_PROJECT_REF, {stdio:'inherit'})\"",
+"sb:prod:link": "node -e \"require('dotenv').config({path:'.env.supabase.prod'}); require('child_process').execSync('npx supabase link --project-ref ' + process.env.SUPABASE_PROJECT_REF, {stdio:'inherit'})\"",
+"sb:whoami": "node -e \"const fs=require('fs'); const p='supabase/.temp/project-ref'; if(!fs.existsSync(p)) {console.error('No linked project-ref'); process.exit(1)}; console.log('linked project-ref:', fs.readFileSync(p,'utf8').trim())\"",
+"sb:dev:push": "npm run sb:dev:link && npm run sb:whoami && npx supabase db push",
+"sb:prod:push": "npm run sb:prod:link && npm run sb:whoami && npx supabase db push",
+
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -20,9 +26,11 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.24",
+    "dotenv": "^17.2.4",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "postcss": "^8.5.6",
+    "supabase": "^2.76.8",
     "tailwindcss": "^3.4.19",
     "typescript": "^5"
   }

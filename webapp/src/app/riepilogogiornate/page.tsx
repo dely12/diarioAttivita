@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/app/supabase/browser";
+import { getSupabaseBrowser } from "@/app/supabase/browser";
+
 import { Stack } from "@/app/ui/components/Stack";
 import { FormCard } from "@/app/ui/components/FormCard";
 import { Plus } from "lucide-react";
@@ -31,6 +32,7 @@ export default function RiepilogoGiornatePage() {
   // auth check (uguale a GiornataPage)
   useEffect(() => {
     (async () => {
+      const supabase = getSupabaseBrowser();
       const { data, error } = await supabase.auth.getUser();
       setAuthChecked(true);
 

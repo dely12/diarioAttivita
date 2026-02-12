@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/app/supabase/browser";
+import { getSupabaseBrowser } from "@/app/supabase/browser";
+
 import { useRouter } from "next/navigation";
 import { Field } from "@/app/ui/components/Field";
 import { Button } from "@/app/ui/components/Button";
@@ -20,7 +21,7 @@ export default function LoginPage() {
 
   // Se sei già loggata, non ha senso stare qui
   useEffect(() => {
-    
+    const supabase = getSupabaseBrowser();
     supabase.auth.getSession().then(({ data, error }) => {
       if (error) setStatus("Errore: " + error.message);
       else if (data.session) router.replace("/giornata");
