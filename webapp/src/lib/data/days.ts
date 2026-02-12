@@ -60,4 +60,21 @@ export async function setDayStatus(dayId: string, status: DayStatus) {
   if (error) throw error;
   return data;
 }
- 
+export type DaySummary = {
+  id: string;
+  date: string;
+  status: "OPEN" | "SUBMITTED" | "LOCKED";
+  total_minutes: number;
+};
+
+export async function listDaySummaries(): Promise<DaySummary[]> {
+  const supabase = getSupabaseBrowser();
+
+  const { data, error } = await supabase
+    .from("day_summaries")
+    .select("id,date,status,total_minutes")
+    .order("date", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as DaySummary[];
+}

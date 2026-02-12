@@ -6,6 +6,7 @@ import { getSupabaseBrowser } from "@/app/supabase/browser";
 import { Button } from "@/app/ui/components/Button";
 import { LogOut } from "lucide-react";
 import { NavMenu, defaultNavItems } from "@/app/ui/components/NavMenu";
+import { getMyProfile } from "@/lib/data/profile";
 
 export function AppHeader() {
   const router = useRouter();
@@ -13,40 +14,62 @@ export function AppHeader() {
 
   const [email, setEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [displayName, setDisplayName] = useState<string>("");
 
   useEffect(() => {
     let mounted = true;
+  const supabase = getSupabaseBrowser();
 
-    async function load() {
-          const supabase = getSupabaseBrowser();
-      const { data } = await supabase.auth.getUser();
-      if (!mounted) return;
-      setEmail(data.user?.email ?? null);
+  async function load() {
+    // 1) check locale (no network)
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!mounted) return;
+
+    const user = sessionData.session?.user;
+    const userEmail = user?.email ?? null;
+
+    setEmail(userEmail);
+
+    // 2) se non loggata, non carico profile
+    if (!userEmail) {
+      setDisplayName("");
       setLoading(false);
+      return;
     }
 
-    load();
-    // dopo load auth
-      if (!loading && !email && pathname !== "/login") {
-        router.replace("/login");
-      }
-    const supabase = getSupabaseBrowser();
-    // opzionale ma utile: se cambia sessione, aggiorna header
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setEmail(session?.user?.email ?? null);
-    });
+    // 3) carico profile (protetto da RLS)
+    try {
+      const profile = await getMyProfile();
+      const name = profile?.nomedipendente?.trim();
+      setDisplayName(name && name.length > 0 ? name : userEmail);
+    } catch {
+      // se profile non c'è o RLS blocca, fallback
+      setDisplayName(userEmail);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    return () => {
-      mounted = false;
-      sub.subscription.unsubscribe();
-    };
+  load();
+
+  // 4) aggiorna se cambia sessione
+  const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const userEmail = session?.user?.email ?? null;
+    setEmail(userEmail);
+    setDisplayName(userEmail ?? "");
+  });
+
+  return () => {
+    mounted = false;
+    sub.subscription.unsubscribe();
+  };
   },[loading, email, pathname, router]);
 
-  async function logout() {
-        const supabase = getSupabaseBrowser();
-    await supabase.auth.signOut();
-    router.replace("/login");
-  }
+async function logout() {
+  const supabase = getSupabaseBrowser();
+  await supabase.auth.signOut({ scope: "local" });
+  router.replace("/login");
+}
 
   // Su /login non mostrare chrome (scelta UX)
   if (pathname === "/login") return null;
@@ -62,11 +85,11 @@ export function AppHeader() {
         <div className="min-w-0">
           <div className="text-sm font-semibold text-slate-900">Diario Attività</div>
           <div className="text-xs text-slate-600 truncate">
-            {loading ? "…" : email ?? "Non autenticata"}
+            {loading ? "…" : displayName ?? "Non autenticata"}
           </div>
         </div>
 
-        {email && (
+        {displayName && (
           <Button
             size="sm"
             variant="secondary"

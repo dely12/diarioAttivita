@@ -1,5 +1,5 @@
 "use client";
-import { Suspense,useEffect, useMemo, useState, useRef } from "react";
+import { Suspense, useEffect, useMemo, useState, useRef } from "react";
 import { getSupabaseBrowser } from "@/app/supabase/browser";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -12,10 +12,10 @@ import { listEntries, addEntry, deleteEntry, Entry, updateEntry } from "@/lib/da
 import { MinutesProgress } from "@/app/ui/components/MinutesProgress";
 import { EntryList } from "@/app/ui/components/EntryList";
 import { listCommesse, listAttivita, LookupOption, AttivitaOption } from "@/lib/data/lookups";
-import { MinutesInput } from "@/app/ui/components/MinutesInput"; 
-import { setDayStatus } from "@/lib/data/days"; 
- 
-export const dynamic = "force-dynamic"; 
+import { MinutesInput } from "@/app/ui/components/MinutesInput";
+import { setDayStatus } from "@/lib/data/days";
+
+export const dynamic = "force-dynamic";
 
 
 function GiornataInner() {
@@ -41,9 +41,25 @@ function GiornataInner() {
   const status = (day?.status as "OPEN" | "SUBMITTED" | "LOCKED") ?? "OPEN";
   const isEditable = status === "OPEN";
   const searchParams = useSearchParams();
-  const dateFromQuery = searchParams.get("date"); 
+  const dateFromQuery = searchParams.get("date");
   const formRef = useRef<HTMLDivElement | null>(null);
 
+  function getDayHint() {
+    if (!day) {
+      return "Inserire le attività per la giornata.";
+    }
+
+    switch (status) {
+      case "OPEN":
+        return "Questa data contiene già inserimenti.";
+      case "SUBMITTED":
+        return "La giornata è confermata e verrà inviata al responsabile.";
+      case "LOCKED":
+        return "La giornata non è modificabile. Contattare il responsabile per modifiche.";
+      default:
+        return "";
+    }
+  }
 
 
   function goToDate(date: string) {
@@ -62,7 +78,7 @@ function GiornataInner() {
 
     if (s === "LOCKED") {
       return (
-        <span className="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+        <span className="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
           Inviata
         </span>
       );
@@ -92,7 +108,7 @@ function GiornataInner() {
   const filteredAttivitaOpt = useMemo(() => {
 
     const c = commessa.trim();
-  
+
     if (!c) return attivitaOpt;
 
     const norm = (s: string) => s.trim().toUpperCase();
@@ -100,7 +116,7 @@ function GiornataInner() {
 
     // attività specifiche per questa commessa
     const specific = attivitaOpt.filter((a) => {
-      const link = a.codcommessacorrispondente; 
+      const link = a.codcommessacorrispondente;
       return link ? norm(link) === cc : false;
     });
 
@@ -115,22 +131,22 @@ function GiornataInner() {
   function onEdit(id: string) {
     const e = entries.find(x => x.id === id);
     console.log("CLICK EDIT id =", id);
-    
+
     if (!e) return;
- console.log("  EDIT att =", e.codattivita);
+    console.log("  EDIT att =", e.codattivita);
     setCommessa(e.codcommessa);
     setAttivita(e.codattivita);
     setMinutes(e.minutes ?? 30);
     setEditingId(e.id);
     // porta l’utente al form
-  requestAnimationFrame(() => {
-    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
   function onCommessaChange(v: string) {
-  setCommessa(v);
-  setAttivita("");      // reset SEMPRE quando l’utente cambia commessa
-}
+    setCommessa(v);
+    setAttivita("");      // reset SEMPRE quando l’utente cambia commessa
+  }
 
   function cancelEdit() {
     setEditingId(null);
@@ -151,24 +167,39 @@ function GiornataInner() {
     setDay(updated);
   }
 
- 
 
-  useEffect(() => {
-    (async () => {
-      const supabase = getSupabaseBrowser();
-      const { data, error } = await supabase.auth.getUser();
+useEffect(() => {
+  (async () => {
+    const supabase = getSupabaseBrowser();
+
+    // 1) controllo locale: NON fa chiamate network
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+
+    if (!session) {
       setAuthChecked(true);
+      setUserOk(false);
+      router.replace("/login");
+      return;
+    }
 
-      if (error || !data.user) {
-        setUserOk(false);
-        router.replace("/login");
-        return;
-      }
+    // 2) controllo “forte” (network). Se token è invalido → 403
+    const { data, error } = await supabase.auth.getUser();
 
-      setUserOk(true);
-      setEmail(data.user.email ?? "(no email)");
-    })();
-  }, [router]);
+    if (error || !data.user) {
+      // IMPORTANTISSIMO: pulisci SOLO locale, anche se il server rifiuta
+      await supabase.auth.signOut({ scope: "local" });
+
+      setAuthChecked(true);
+      setUserOk(false);
+      router.replace("/login");
+      return;
+    }
+
+    setAuthChecked(true);
+    setUserOk(true);
+  })();
+}, [router]);
 
   //per carico dati da db day
   useEffect(() => {
@@ -216,7 +247,7 @@ function GiornataInner() {
     })();
   }, [userOk]);
 
- 
+
 
   useEffect(() => {
     if (dateFromQuery) setSelectedDate(dateFromQuery);
@@ -292,84 +323,81 @@ function GiornataInner() {
       }>
         <Field
           label=""
-          hint={
-            day
-              ? "Questa data contiene inserimenti."
-              : "Inserire le attività per la giornata."
-          }
+          hint={getDayHint()}
         >
+
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => {
-                  const d = e.target.value;
-                  setSelectedDate(d);
-                  router.push(`/giornata?date=${d}`);
-                }}
+              const d = e.target.value;
+              setSelectedDate(d);
+              router.push(`/giornata?date=${d}`);
+            }}
           />
         </Field>
       </FormCard>
 
 
       {isEditable && (
-          <div ref={formRef}>  
-        <FormCard title="Aggiungi attività" subtitle="Inserisci attività e premi aggiungi." >
+        <div ref={formRef}>
+          <FormCard title="Aggiungi attività" subtitle="Inserisci attività e premi aggiungi." >
 
 
 
-          <Field label="Commessa (codice)">
-            <select
-              value={commessa}
-               onChange={(e) => onCommessaChange(e.target.value)}
-              disabled={loadingLookups}
-            >
-              <option value="">{loadingLookups ? "Caricamento..." : "Scegli"}</option>
-              {commesseOpt.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
+            <Field label="Commessa">
+              <select
+                value={commessa}
+                onChange={(e) => onCommessaChange(e.target.value)}
+                disabled={loadingLookups}
+              >
+                <option value="">{loadingLookups ? "Caricamento..." : "Scegli"}</option>
+                {commesseOpt.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Attività">
+              <select
+                value={attivita}
+                onChange={(e) => setAttivita(e.target.value)}
+                disabled={loadingLookups || !commessa.trim()}
+              >
+                <option value="">
+                  {loadingLookups
+                    ? "Caricamento..."
+                    : !commessa.trim()
+                      ? "Seleziona prima la commessa"
+                      : "Scegli"}
                 </option>
-              ))}
-            </select>
-          </Field>
+                {filteredAttivitaOpt.map((o) => (
 
-          <Field label="Attività (codice)">
-            <select
-              value={attivita}
-              onChange={(e) => setAttivita(e.target.value)}
-              disabled={loadingLookups || !commessa.trim()}
-            >
-              <option value="">
-                {loadingLookups
-                  ? "Caricamento..."
-                  : !commessa.trim()
-                    ? "Seleziona prima la commessa"
-                    : "Scegli"}
-              </option>
-              {filteredAttivitaOpt.map((o) => (
-                
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              )) }
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
 
-            </select>
-          </Field>
+              </select>
+            </Field>
 
-          <Field label="Minuti">
-            <MinutesInput value={minutes} onChange={setMinutes} />
-          </Field>
+            <Field label="Minuti">
+              <MinutesInput value={minutes} onChange={setMinutes} />
+            </Field>
 
-          <Button variant="secondary" onClick={onAddOrUpdate} disabled={!userOk || !commessa.trim() || !attivita.trim() || minutes <= 0}>
-            {editingId ? "Salva modifiche" : "Aggiungi"}
-          </Button>
-
-          {editingId && (
-            <Button variant="secondary" size="sm" onClick={cancelEdit}>
-              Annulla
+            <Button variant="secondary" onClick={onAddOrUpdate} disabled={!userOk || !commessa.trim() || !attivita.trim() || minutes <= 0}>
+              {editingId ? "Salva modifiche" : "Aggiungi"}
             </Button>
-          )}
-        </FormCard>
-         </div>
+
+            {editingId && (
+              <Button variant="secondary" size="sm" onClick={cancelEdit}>
+                Annulla
+              </Button>
+            )}
+          </FormCard>
+        </div>
       )}
       <FormCard title="Totale ore inserite" accent={false}
       >
@@ -403,3 +431,4 @@ export default function GiornataPage() {
     </Suspense>
   );
 }
+

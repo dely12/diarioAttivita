@@ -45,7 +45,10 @@ export function EntryList({
               const commessaText = resolveCommessa ? resolveCommessa(e.codcommessa) : e.codcommessa;
               const attivitaText = resolveAttivita ? resolveAttivita(e.codattivita) : e.codattivita;
 
-              const canEdit = !!onEdit && !isEditing; // edit disponibile solo se ho callback e non è già in edit
+              //const canEdit = !!onEdit && !isEditing; // edit disponibile solo se ho callback e non è già in edit
+
+              const canEdit = !!onEdit && !isEditing && !readOnly;
+              const canDelete = !!onDelete && !readOnly;
 
               const rowClass = [
                 "flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors",
@@ -82,7 +85,7 @@ export function EntryList({
                         <Pencil size={16} />
                       </Button>
                     )}
-
+                    {canDelete && (
                     <Button
                       size="sm"
                       variant="secondary"
@@ -91,7 +94,7 @@ export function EntryList({
                       title="Elimina"
                     >
                       <Trash2 size={16} />
-                    </Button>
+                    </Button>)}
                   </div>
                 </div>
               );

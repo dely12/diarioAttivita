@@ -20,14 +20,32 @@ export default function LoginPage() {
  
 
   // Se sei già loggata, non ha senso stare qui
-  useEffect(() => {
+useEffect(() => {
+  let alive = true;
+
+  (async () => {
     const supabase = getSupabaseBrowser();
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (error) setStatus("Errore: " + error.message);
-      else if (data.session) router.replace("/giornata");
-      else setStatus("Non loggata");
-    });
-  }, [router]);
+
+    const { data, error } = await supabase.auth.getSession();
+    if (!alive) return;
+
+    if (error) {
+      setStatus("Errore: " + error.message);
+      return;
+    }
+
+    if (data.session) {
+      router.replace("/giornata");
+      return;
+    }
+
+    setStatus("Eseguire l'accesso");
+  })();
+
+  return () => {
+    alive = false;
+  };
+}, [router]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -1,18 +1,25 @@
-import { createClient,SupabaseClient  } from "@supabase/supabase-js";
-let _client: SupabaseClient | null = null;
- 
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-export function getSupabaseBrowser(): SupabaseClient {
+let browserClient: SupabaseClient | null = null;
+
+export function getSupabaseBrowser() {
+  if (browserClient) return browserClient;
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
+
   if (!url || !anon) {
-    throw new Error(
-      "Missing Supabase env vars: NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY"
-    );
+    throw new Error("Missing Supabase env vars");
   }
 
-  if (!_client) _client = createClient(url, anon);
-  return _client;
+  browserClient = createClient(url, anon, {
+    auth: {
+      storageKey: "diario-attivita-auth",
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  });
+
+  return browserClient;
 }
-//export const supabase = createClient(url, anon);

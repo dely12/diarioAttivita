@@ -11,14 +11,10 @@ import { listDays } from "@/lib/data/days";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Button } from "../ui/components/Button";
-import { todayISODate  } from "@/lib/data/days";
+import { todayISODate, listDaySummaries, DaySummary } from "@/lib/data/days";
+import { formatMinutesAsHours } from "@/lib/data/util";
 
 
-type DayRow = {
-  id: string;
-  date: string;   // ISO yyyy-mm-dd
-  status: string; // DRAFT / CONFIRMED (o quello che hai)
-};
 
 export default function RiepilogoGiornatePage() {
   const router = useRouter();
@@ -27,22 +23,38 @@ export default function RiepilogoGiornatePage() {
   const [userOk, setUserOk] = useState(false);
 
   const [loading, setLoading] = useState(true);
-  const [days, setDays] = useState<DayRow[]>([]);
+  const [days, setDays] = useState<DaySummary[]>([]);
 
   // auth check (uguale a GiornataPage)
   useEffect(() => {
     (async () => {
       const supabase = getSupabaseBrowser();
-      const { data, error } = await supabase.auth.getUser();
+     // 1) controllo locale: NON fa chiamate network
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+
+    if (!session) {
       setAuthChecked(true);
+      setUserOk(false);
+      router.replace("/login");
+      return;
+    }
 
-      if (error || !data.user) {
-        setUserOk(false);
-        router.replace("/login");
-        return;
-      }
+    // 2) controllo “forte” (network). Se token è invalido → 403
+    const { data, error } = await supabase.auth.getUser();
 
-      setUserOk(true);
+    if (error || !data.user) {
+      // IMPORTANTISSIMO: pulisci SOLO locale, anche se il server rifiuta
+      await supabase.auth.signOut({ scope: "local" });
+
+      setAuthChecked(true);
+      setUserOk(false);
+      router.replace("/login");
+      return;
+    }
+
+    setAuthChecked(true);
+    setUserOk(true);
     })();
   }, [router]);
 
@@ -53,7 +65,7 @@ export default function RiepilogoGiornatePage() {
     (async () => {
       setLoading(true);
       try {
-        const rows = await listDays();
+        const rows = await listDaySummaries();
         setDays(rows);
       } catch (e) {
         console.error(e);
@@ -69,16 +81,16 @@ export default function RiepilogoGiornatePage() {
   return (
     <Stack gap={6}>
       <FormCard title="Riepilogo giornate" subtitle="visualizza o conferma le giornate" accent
-       actions={
-    <Button
-        variant="secondary"
-      size="sm"
-      leftIcon={<Plus className="h-4 w-4" />}
-      onClick={() => router.push(`/giornata?date=${todayISODate()}`)}
-    >
-      Nuova giornata
-    </Button>
-  }
+        actions={
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<Plus className="h-4 w-4" />}
+            onClick={() => router.push(`/giornata?date=${todayISODate()}`)}
+          >
+            Nuova giornata
+          </Button>
+        }
       >
         {loading ? (
           <p className="gf-help">Caricamento giornate…</p>
@@ -93,18 +105,26 @@ export default function RiepilogoGiornatePage() {
                 href={`/giornata?date=${d.date}`}
                 className="block rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100"
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold text-slate-900">
-                      {d.date}
+                <div className="flex items-center gap-3">
+                  {/* Left */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <div className="truncate font-semibold text-slate-900">{d.date}</div>
+                      <div className="text-right">
+                        <div className="text-sm font-semibold text-slate-900">
+                        totale inserito:  {formatMinutesAsHours(d.total_minutes)}
+                        </div>
+                        <div className="gf-muted text-xs">{d.total_minutes} min</div>
+                      </div>
                     </div>
 
-                    <div className="text-sm text-slate-500">
-                     <StatusBadge status={d.status} />
+                    <div className="mt-2">
+                      <StatusBadge status={d.status} />
                     </div>
                   </div>
 
-                  <ChevronRight className="h-5 w-5 text-slate-400" />
+                  {/* Right icon */}
+                  <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />
                 </div>
               </Link>
 
@@ -130,7 +150,7 @@ function StatusBadge({ status }: { status: string }) {
 
   if (s === "LOCKED") {
     return (
-      <span className="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+      <span className="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
         Inviata
       </span>
     );
