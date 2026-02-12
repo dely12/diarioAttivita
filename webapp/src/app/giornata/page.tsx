@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { Suspense,useEffect, useMemo, useState, useRef } from "react";
 import { getSupabaseBrowser } from "@/app/supabase/browser";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -12,14 +12,13 @@ import { listEntries, addEntry, deleteEntry, Entry, updateEntry } from "@/lib/da
 import { MinutesProgress } from "@/app/ui/components/MinutesProgress";
 import { EntryList } from "@/app/ui/components/EntryList";
 import { listCommesse, listAttivita, LookupOption, AttivitaOption } from "@/lib/data/lookups";
-import { MinutesInput } from "@/app/ui/components/MinutesInput";
-import { PageMeta } from "@/app/ui/components/PageMeta";
-import { setDayStatus } from "@/lib/data/days";
-import { PageBar } from "../ui/components/PageBar";
+import { MinutesInput } from "@/app/ui/components/MinutesInput"; 
+import { setDayStatus } from "@/lib/data/days"; 
  
+export const dynamic = "force-dynamic"; 
 
 
-export default function GiornataPage() {
+function GiornataInner() {
   const router = useRouter();
   const [email, setEmail] = useState<string>("...");
   const [day, setDay] = useState<any>(null);
@@ -42,7 +41,7 @@ export default function GiornataPage() {
   const status = (day?.status as "OPEN" | "SUBMITTED" | "LOCKED") ?? "OPEN";
   const isEditable = status === "OPEN";
   const searchParams = useSearchParams();
-  const dateFromQuery = searchParams.get("date");
+  const dateFromQuery = searchParams.get("date"); 
   const formRef = useRef<HTMLDivElement | null>(null);
 
 
@@ -302,7 +301,11 @@ export default function GiornataPage() {
           <input
             type="date"
             value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
+            onChange={(e) => {
+                  const d = e.target.value;
+                  setSelectedDate(d);
+                  router.push(`/giornata?date=${d}`);
+                }}
           />
         </Field>
       </FormCard>
@@ -391,5 +394,12 @@ export default function GiornataPage() {
     </Stack>
 
 
+  );
+}
+export default function GiornataPage() {
+  return (
+    <Suspense fallback={null}>
+      <GiornataInner />
+    </Suspense>
   );
 }
