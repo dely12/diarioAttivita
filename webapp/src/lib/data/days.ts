@@ -1,4 +1,4 @@
-import { supabase } from "@/app/supabase/browser";
+import { getSupabaseBrowser } from "@/app/supabase/browser";
 
 export type Day = {
   id: string;
@@ -15,6 +15,7 @@ export function todayISODate(): string {
 }
 
 export async function getDayByDate(date: string) {
+      const supabase = getSupabaseBrowser();
   const { data, error } = await supabase
     .from("days")
     .select("*")
@@ -25,6 +26,7 @@ export async function getDayByDate(date: string) {
   return data; // può essere null
 }
 export async function createDay(date: string) {
+      const supabase = getSupabaseBrowser();
   const { data, error } = await supabase
     .from("days")
     .insert({ date })
@@ -36,6 +38,7 @@ export async function createDay(date: string) {
 }
 
 export async function listDays() {
+      const supabase = getSupabaseBrowser();
   const { data, error } = await supabase
     .from("days")
     .select("id,date,status")
@@ -46,6 +49,7 @@ export async function listDays() {
 }
 
 export async function setDayStatus(dayId: string, status: DayStatus) {
+      const supabase = getSupabaseBrowser();
   const { data, error } = await supabase
     .from("days")
     .update({ status })

@@ -1,4 +1,4 @@
-import { supabase } from "@/app/supabase/browser";
+import { getSupabaseBrowser } from "@/app/supabase/browser";
 
 export type LookupOption = { value: string; label: string };
 export type AttivitaOption = LookupOption & {
@@ -6,6 +6,7 @@ export type AttivitaOption = LookupOption & {
 };
 
 export async function listCommesse(): Promise<LookupOption[]> {
+      const supabase = getSupabaseBrowser();
   const { data, error } = await supabase
     .from("commesse")
     .select("codcommessa, descrizione")
@@ -20,6 +21,7 @@ export async function listCommesse(): Promise<LookupOption[]> {
 }
 
 export async function listAttivita(): Promise<LookupOption[]> {
+      const supabase = getSupabaseBrowser();
   const { data, error } = await supabase
     .from("attivita")
    .select("codattivita, descrizione, codcommessacorrispondente")

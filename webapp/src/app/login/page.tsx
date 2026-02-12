@@ -33,7 +33,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setStatus("");
-
+    const supabase = getSupabaseBrowser();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     setLoading(false);

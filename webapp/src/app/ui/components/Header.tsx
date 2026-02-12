@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { supabase } from "@/app/supabase/browser";
+import { getSupabaseBrowser } from "@/app/supabase/browser";
 import { Button } from "@/app/ui/components/Button";
 import { LogOut } from "lucide-react";
 import { NavMenu, defaultNavItems } from "@/app/ui/components/NavMenu";
@@ -18,6 +18,7 @@ export function AppHeader() {
     let mounted = true;
 
     async function load() {
+          const supabase = getSupabaseBrowser();
       const { data } = await supabase.auth.getUser();
       if (!mounted) return;
       setEmail(data.user?.email ?? null);
@@ -29,7 +30,7 @@ export function AppHeader() {
       if (!loading && !email && pathname !== "/login") {
         router.replace("/login");
       }
-
+    const supabase = getSupabaseBrowser();
     // opzionale ma utile: se cambia sessione, aggiorna header
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setEmail(session?.user?.email ?? null);
@@ -42,6 +43,7 @@ export function AppHeader() {
   },[loading, email, pathname, router]);
 
   async function logout() {
+        const supabase = getSupabaseBrowser();
     await supabase.auth.signOut();
     router.replace("/login");
   }

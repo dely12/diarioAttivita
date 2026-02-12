@@ -1,4 +1,4 @@
-import { supabase } from "@/app/supabase/browser";
+import { getSupabaseBrowser } from "@/app/supabase/browser";
 
 export type Entry = {
   id: string;
@@ -14,7 +14,9 @@ export async function updateEntry(
   input: { codcommessa: string; codattivita: string; minutes: number }
   
 ): Promise<Entry> { 
+      const supabase = getSupabaseBrowser();
   const { data, error } = await supabase
+  
     .from("entries")
     .update({
       codcommessa: input.codcommessa,
@@ -30,6 +32,7 @@ export async function updateEntry(
 }
 
 export async function listEntries(dayId: string): Promise<Entry[]> {
+      const supabase = getSupabaseBrowser();
   const { data, error } = await supabase
     .from("entries")
     .select("*")
@@ -47,6 +50,7 @@ export async function addEntry(input: {
   minutes: number;
   
 }): Promise<Entry> {
+      const supabase = getSupabaseBrowser();
   const { data, error } = await supabase
     .from("entries")
     .insert({
@@ -63,6 +67,7 @@ export async function addEntry(input: {
 }
 
 export async function deleteEntry(id: string): Promise<void> {
+      const supabase = getSupabaseBrowser();
   const { error } = await supabase.from("entries").delete().eq("id", id);
   if (error) throw error;
 }
