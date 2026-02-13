@@ -47,7 +47,7 @@ export function EntryList({
 
               //const canEdit = !!onEdit && !isEditing; // edit disponibile solo se ho callback e non è già in edit
 
-              const canEdit = !!onEdit && !isEditing && !readOnly;
+              const canEdit =   !!onEdit && !isEditing && !readOnly;
               const canDelete = !!onDelete && !readOnly;
 
               const rowClass = [

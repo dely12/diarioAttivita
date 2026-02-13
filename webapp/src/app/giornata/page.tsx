@@ -14,6 +14,7 @@ import { EntryList } from "@/app/ui/components/EntryList";
 import { listCommesse, listAttivita, LookupOption, AttivitaOption } from "@/lib/data/lookups";
 import { MinutesInput } from "@/app/ui/components/MinutesInput";
 import { setDayStatus } from "@/lib/data/days";
+import { SendIcon, SquarePen } from "lucide-react"; 
 
 export const dynamic = "force-dynamic";
 
@@ -293,7 +294,7 @@ useEffect(() => {
   if (!userOk) return null;
   return (
 
-    <Stack gap={6}>
+    <Stack gap={2}>
       <FormCard title="Data" actions={
         <div className="flex items-center gap-2">
           <StatusBadge status={status} />
@@ -304,8 +305,8 @@ useEffect(() => {
               variant="secondary"
               onClick={reopenDay}
               title="Riapri la giornata per modificare gli inserimenti"
-            >
-              Modifica
+              leftIcon={<SquarePen size={16} />}
+            > 
             </Button>
           )}
 
@@ -315,8 +316,10 @@ useEffect(() => {
               onClick={submitDay}
               disabled={entries.length === 0}
               title="Conferma la giornata"
+              rightIcon = {  <SendIcon size={16} />}
             >
               Conferma
+             
             </Button>
           )}
         </div>
@@ -337,7 +340,12 @@ useEffect(() => {
           />
         </Field>
       </FormCard>
+<FormCard title="Totale ore inserite" accent={false}
+      >
 
+        <MinutesProgress isEditable={isEditable} totalMinutes={totalMinutes} targetMinutes={480} />
+
+      </FormCard>
 
       {isEditable && (
         <div ref={formRef}>
@@ -399,12 +407,7 @@ useEffect(() => {
           </FormCard>
         </div>
       )}
-      <FormCard title="Totale ore inserite" accent={false}
-      >
-
-        <MinutesProgress totalMinutes={totalMinutes} targetMinutes={480} />
-
-      </FormCard>
+      
 
       <FormCard title="Attività inserite" accent={false}>
         {loadingEntries ? (

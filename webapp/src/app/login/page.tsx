@@ -61,7 +61,7 @@ useEffect(() => {
       return;
     }
 
-    router.replace("/riepilogogiornate");
+    router.replace("/calendario");
   }
 
   return (

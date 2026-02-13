@@ -8,99 +8,133 @@ import { LogOut } from "lucide-react";
 import { NavMenu, defaultNavItems } from "@/app/ui/components/NavMenu";
 import { getMyProfile } from "@/lib/data/profile";
 
+
 export function AppHeader() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [email, setEmail] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [displayName, setDisplayName] = useState<string>("");
-
-  useEffect(() => {
-    let mounted = true;
   const supabase = getSupabaseBrowser();
 
-  async function load() {
-    // 1) check locale (no network)
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!mounted) return;
+  const [authReady, setAuthReady] = useState(false);
+  const [email, setEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
-    const user = sessionData.session?.user;
-    const userEmail = user?.email ?? null;
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+const [loggingOut, setLoggingOut] = useState(false);
+  const loading = !authReady || profileLoading;
 
-    setEmail(userEmail);
+  // 1) Auth bootstrap + subscription (mount-only)
+  useEffect(() => {
+    let alive = true;
 
-    // 2) se non loggata, non carico profile
-    if (!userEmail) {
-      setDisplayName("");
-      setLoading(false);
-      return;
+    async function bootstrap() {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (!alive) return;
+
+      if (error) console.error("getSession error", error);
+
+      const u = session?.user ?? null;
+      setEmail(u?.email ?? null);
+      setUserId(u?.id ?? null);
+      setAuthReady(true);
     }
 
-    // 3) carico profile (protetto da RLS)
-    try {
-      const profile = await getMyProfile();
-      const name = profile?.nomedipendente?.trim();
-      setDisplayName(name && name.length > 0 ? name : userEmail);
-    } catch {
-      // se profile non c'è o RLS blocca, fallback
-      setDisplayName(userEmail);
-    } finally {
-      setLoading(false);
+    bootstrap();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const u = session?.user ?? null;
+      setEmail(u?.email ?? null);
+      setUserId(u?.id ?? null);
+      setAuthReady(true);
+    });
+
+    return () => {
+      alive = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  // 2) Profile load when user changes
+  useEffect(() => {
+    let alive = true;
+
+    async function loadProfile() {
+      setProfileLoading(true);
+      setDisplayName(null);
+      setIsAdmin(false);
+
+      if (!userId) {
+        setProfileLoading(false);
+        return;
+      }
+
+      // Best practice: getMyProfile deve essere client-safe e usare RLS
+      const profile = await getMyProfile(supabase);
+      if (!alive) return;
+
+      setDisplayName(profile?.nomedipendente ?? null); 
+      setProfileLoading(false);
     }
+
+    loadProfile();
+
+    return () => { alive = false; };
+  }, [userId, supabase]);
+
+  // 3) Redirect gate
+  useEffect(() => {
+    if (!authReady) return;
+
+    const isLogin = pathname === "/login";
+    const isAuthed = Boolean(userId);
+
+    if (!isAuthed && !isLogin) router.replace("/login");
+    if (isAuthed && isLogin){
+      router.replace("/giornata");
+      setLoggingOut(false);
+    } 
+  }, [authReady, userId, pathname, router]);
+
+  async function logout() {
+     setLoggingOut(true);
+    await supabase.auth.signOut({ scope: "local" });
+    router.replace("/login");
   }
 
-  load();
-
-  // 4) aggiorna se cambia sessione
-  const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-    const userEmail = session?.user?.email ?? null;
-    setEmail(userEmail);
-    setDisplayName(userEmail ?? "");
-  });
-
-  return () => {
-    mounted = false;
-    sub.subscription.unsubscribe();
-  };
-  },[loading, email, pathname, router]);
-
-async function logout() {
-  const supabase = getSupabaseBrowser();
-  await supabase.auth.signOut({ scope: "local" });
-  router.replace("/login");
-}
-
-  // Su /login non mostrare chrome (scelta UX)
   if (pathname === "/login") return null;
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-3">
-         {/* LEFT: hamburger */}
         <div className="shrink-0">
           <NavMenu items={defaultNavItems} />
         </div>
-         {/* CENTER: app name + email */}
+
         <div className="min-w-0">
           <div className="text-sm font-semibold text-slate-900">Diario Attività</div>
           <div className="text-xs text-slate-600 truncate">
-            {loading ? "…" : displayName ?? "Non autenticata"}
-          </div>
+              {(loading || loggingOut) ? "…" : displayName ?? "Non autenticata"}
+            </div>
         </div>
 
-        {displayName && (
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={logout}
-            title="Logout"
-            aria-label="Logout"
-            className="px-2 rounded-full"
-          >
-            <LogOut size={18} />
-          </Button>
-        )}
+        <div className="shrink-0 w-10 flex justify-end">
+            {(displayName || loggingOut) ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={logout}
+                disabled={loggingOut}
+                title="Logout"
+                aria-label="Logout"
+                className="px-2 rounded-full"
+              >
+                <LogOut size={18} />
+              </Button>
+            ) : null}
+          </div>
+
       </div>
     </header>
   );

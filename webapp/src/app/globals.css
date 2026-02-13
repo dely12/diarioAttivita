@@ -34,6 +34,29 @@
          outline-none transition
          focus:border-blue-500 focus:ring-4 focus:ring-blue-100;
   }
+  /* iOS/Safari: evita rendering bizzarro del date input */
+    input[type="date"] {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+
+      /* evitare che l’overlay interno sballi */
+      padding: 0.75rem 0.9rem;   /* regola qui se serve */
+      line-height: 1.25;
+      font-size: 16px;          /* IMPORTANT: iOS zoom & layout */
+    }
+
+    /* spesso aiuta anche: */
+    input[type="date"]::-webkit-date-and-time-value {
+      text-align: left;
+      height: 1.25em;
+    }
+
+    /* se hai input globali con height fissa, neutralizzala qui */
+    input[type="date"] {
+      height: auto;
+    }
+
 /*
   button {
     @apply inline-flex h-11 items-center justify-center rounded-lg bg-blue-600 px-4

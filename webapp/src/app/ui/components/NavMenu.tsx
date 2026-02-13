@@ -85,5 +85,6 @@ export function NavMenu({ items }: { items: Item[] }) {
 // comodo: preset per ora (una voce sola)
 export const defaultNavItems: { label: string; href: string; icon: React.ReactNode }[] = [
   { label: "Riepilogo", href: "/riepilogogiornate", icon: <ClipboardList className="h-4 w-4" /> },
+  { label: "Vista Calendario", href: "/calendario", icon: <ClipboardList className="h-4 w-4" /> },
 ];
 

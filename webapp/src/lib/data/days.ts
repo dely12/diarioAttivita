@@ -78,3 +78,20 @@ export async function listDaySummaries(): Promise<DaySummary[]> {
   if (error) throw error;
   return (data ?? []) as DaySummary[];
 }
+
+export async function listDaySummariesRange(
+  fromISO: string,
+  toISO: string
+): Promise<DaySummary[]> {
+  const supabase = getSupabaseBrowser();
+
+  const { data, error } = await supabase
+    .from("day_summaries")
+    .select("id,date,status,total_minutes")
+    .gte("date", fromISO)
+    .lt("date", toISO)
+    .order("date", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as DaySummary[];
+}
