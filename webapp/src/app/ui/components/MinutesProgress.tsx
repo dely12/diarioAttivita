@@ -57,7 +57,7 @@ const extra = Math.max(delta, 0);
         <div className={`h-full ${barClass}`} style={{ width: `${pct}%` }} />
       </div>
 
-        {status === "UNDER" && isEditable && (
+        {status === "UNDER" && isEditable && ( totalMinutes > 0 ) && (
         <p className="text-sm text-red-700">
           Non hai inserito 8 ore complete.
         </p>
