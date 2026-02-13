@@ -92,7 +92,7 @@ const [loggingOut, setLoggingOut] = useState(false);
 
     if (!isAuthed && !isLogin) router.replace("/login");
     if (isAuthed && isLogin){
-      router.replace("/giornata");
+      router.replace("/calendario");
       setLoggingOut(false);
     } 
   }, [authReady, userId, pathname, router]);

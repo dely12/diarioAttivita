@@ -35,7 +35,7 @@ useEffect(() => {
     }
 
     if (data.session) {
-      router.replace("/giornata");
+      router.replace("/calendario");
       return;
     }
 
