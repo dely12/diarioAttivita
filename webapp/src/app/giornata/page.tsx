@@ -14,7 +14,7 @@ import { EntryList } from "@/app/ui/components/EntryList";
 import { listCommesse, listAttivita, LookupOption, AttivitaOption } from "@/lib/data/lookups";
 import { MinutesInput } from "@/app/ui/components/MinutesInput";
 import { setDayStatus } from "@/lib/data/days";
-import { SendIcon, SquarePen } from "lucide-react"; 
+import { SendIcon, SquarePen } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +44,9 @@ function GiornataInner() {
   const searchParams = useSearchParams();
   const dateFromQuery = searchParams.get("date");
   const formRef = useRef<HTMLDivElement | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+const [submitError, setSubmitError] = useState<string | null>(null);
+
 
   function getDayHint() {
     if (!day) {
@@ -156,10 +159,30 @@ function GiornataInner() {
     setMinutes(30);
   }
   async function submitDay() {
-    if (!day) return;
-    const updated = await setDayStatus(day.id, "SUBMITTED");
-    setDay(updated);
+
+   if (!day || submitting) return;
+
+  setSubmitting(true);
+  setSubmitError(null);
+
+  try {
+    const supabase = getSupabaseBrowser();
+    const { data, error } = await supabase.functions.invoke("confirm-day", {
+      body: { date: day.date },
+    });
+
+    if (error) {
+      console.error("confirm-day failed:", error);
+      // anche se fallisce, tu vuoi che il DB sia aggiornato: quindi qui la function DEVE garantire update sempre
+      // se non lo fa, allora è un bug della function.
+      setSubmitError("Errore durante la conferma (mail non inviata)");
+    }
+
     router.push("/riepilogogiornate");
+  } finally {
+    // non serve se navighi sempre, ma lasciamolo corretto
+    setSubmitting(false);
+  }
   }
 
   async function reopenDay() {
@@ -169,38 +192,38 @@ function GiornataInner() {
   }
 
 
-useEffect(() => {
-  (async () => {
-    const supabase = getSupabaseBrowser();
+  useEffect(() => {
+    (async () => {
+      const supabase = getSupabaseBrowser();
 
-    // 1) controllo locale: NON fa chiamate network
-    const { data: sessionData } = await supabase.auth.getSession();
-    const session = sessionData.session;
+      // 1) controllo locale: NON fa chiamate network
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData.session;
 
-    if (!session) {
+      if (!session) {
+        setAuthChecked(true);
+        setUserOk(false);
+        router.replace("/login");
+        return;
+      }
+
+      // 2) controllo “forte” (network). Se token è invalido → 403
+      const { data, error } = await supabase.auth.getUser();
+
+      if (error || !data.user) {
+        // IMPORTANTISSIMO: pulisci SOLO locale, anche se il server rifiuta
+        await supabase.auth.signOut({ scope: "local" });
+
+        setAuthChecked(true);
+        setUserOk(false);
+        router.replace("/login");
+        return;
+      }
+
       setAuthChecked(true);
-      setUserOk(false);
-      router.replace("/login");
-      return;
-    }
-
-    // 2) controllo “forte” (network). Se token è invalido → 403
-    const { data, error } = await supabase.auth.getUser();
-
-    if (error || !data.user) {
-      // IMPORTANTISSIMO: pulisci SOLO locale, anche se il server rifiuta
-      await supabase.auth.signOut({ scope: "local" });
-
-      setAuthChecked(true);
-      setUserOk(false);
-      router.replace("/login");
-      return;
-    }
-
-    setAuthChecked(true);
-    setUserOk(true);
-  })();
-}, [router]);
+      setUserOk(true);
+    })();
+  }, [router]);
 
   //per carico dati da db day
   useEffect(() => {
@@ -248,6 +271,11 @@ useEffect(() => {
     })();
   }, [userOk]);
 
+useEffect(() => {
+  if (!submitting) return;
+  document.body.classList.add("overflow-hidden");
+  return () => document.body.classList.remove("overflow-hidden");
+}, [submitting]);
 
 
   useEffect(() => {
@@ -293,8 +321,10 @@ useEffect(() => {
   if (!authChecked) return null;        // oppure “Caricamento…”
   if (!userOk) return null;
   return (
+    <> 
 
     <Stack gap={2}>
+      
       <FormCard title="Data" actions={
         <div className="flex items-center gap-2">
           <StatusBadge status={status} />
@@ -306,7 +336,7 @@ useEffect(() => {
               onClick={reopenDay}
               title="Riapri la giornata per modificare gli inserimenti"
               leftIcon={<SquarePen size={16} />}
-            > 
+            >
             </Button>
           )}
 
@@ -314,12 +344,12 @@ useEffect(() => {
             <Button
               size="sm"
               onClick={submitDay}
-              disabled={entries.length === 0}
+              disabled={submitting || entries.length === 0 }
               title="Conferma la giornata"
-              rightIcon = {  <SendIcon size={16} />}
+              rightIcon={<SendIcon size={16} />}
             >
-              Conferma
-             
+                {submitting ? "Confermo…" : "Conferma"}
+
             </Button>
           )}
         </div>
@@ -340,7 +370,7 @@ useEffect(() => {
           />
         </Field>
       </FormCard>
-<FormCard title="Totale ore inserite" accent={false}
+      <FormCard title="Totale ore inserite" accent={false}
       >
 
         <MinutesProgress isEditable={isEditable} totalMinutes={totalMinutes} targetMinutes={480} />
@@ -407,7 +437,7 @@ useEffect(() => {
           </FormCard>
         </div>
       )}
-      
+
 
       <FormCard title="Attività inserite" accent={false}>
         {loadingEntries ? (
@@ -423,10 +453,32 @@ useEffect(() => {
         )}
       </FormCard>
     </Stack>
+  {submitting && (
+      <div className="fixed inset-0 z-[100] bg-white/70 backdrop-blur-sm">
+        <div className="absolute inset-0 flex items-center justify-center px-6">
+          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-slate-900">Conferma in corso…</div>
+                <div className="text-xs text-slate-600">Aggiorno la giornata e invio il riepilogo.</div>
+              </div>
+            </div>
 
-
+            {submitError && (
+              <p className="mt-3 text-sm text-red-700">{submitError}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+</>
   );
+
+
 }
+
+
 export default function GiornataPage() {
   return (
     <Suspense fallback={null}>
