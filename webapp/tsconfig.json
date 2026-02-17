@@ -31,5 +31,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
 , "src/app/ui/components/FormAction"  ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "supabase/functions/**"]
 }

@@ -1,0 +1,10 @@
+cd ./webapp
+npx supabase start
+npx supabase functions serve --no-verify-jwt --env-file supabase/.env
+npm run dev
+
+
+per precommint:
+npm run build
+
+Per settare e verificare le variabili per next function su supabase:

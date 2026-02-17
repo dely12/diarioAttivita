@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState,useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getSupabaseBrowser } from "@/app/supabase/browser";
 import { Button } from "@/app/ui/components/Button";
@@ -13,15 +13,13 @@ export function AppHeader() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const supabase = getSupabaseBrowser();
+  const supabase =  useMemo(() => getSupabaseBrowser(), []);
 
-  const [authReady, setAuthReady] = useState(false);
-  const [email, setEmail] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false); 
   const [userId, setUserId] = useState<string | null>(null);
 
   const [profileLoading, setProfileLoading] = useState(true);
-  const [displayName, setDisplayName] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [displayName, setDisplayName] = useState<string | null>(null); 
 const [loggingOut, setLoggingOut] = useState(false);
   const loading = !authReady || profileLoading;
 
@@ -35,8 +33,7 @@ const [loggingOut, setLoggingOut] = useState(false);
 
       if (error) console.error("getSession error", error);
 
-      const u = session?.user ?? null;
-      setEmail(u?.email ?? null);
+      const u = session?.user ?? null; 
       setUserId(u?.id ?? null);
       setAuthReady(true);
     }
@@ -44,8 +41,7 @@ const [loggingOut, setLoggingOut] = useState(false);
     bootstrap();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const u = session?.user ?? null;
-      setEmail(u?.email ?? null);
+      const u = session?.user ?? null; 
       setUserId(u?.id ?? null);
       setAuthReady(true);
     });
@@ -62,8 +58,7 @@ const [loggingOut, setLoggingOut] = useState(false);
 
     async function loadProfile() {
       setProfileLoading(true);
-      setDisplayName(null);
-      setIsAdmin(false);
+      setDisplayName(null); 
 
       if (!userId) {
         setProfileLoading(false);
@@ -92,16 +87,19 @@ const [loggingOut, setLoggingOut] = useState(false);
 
     if (!isAuthed && !isLogin) router.replace("/login");
     if (isAuthed && isLogin){
-      router.replace("/calendario");
-      setLoggingOut(false);
+      router.replace("/calendario"); 
     } 
   }, [authReady, userId, pathname, router]);
 
   async function logout() {
      setLoggingOut(true);
-    await supabase.auth.signOut({ scope: "local" });
-    router.replace("/login");
+    await supabase.auth.signOut({ scope: "local" }); 
   }
+
+  useEffect(() => {
+  // qualunque transizione auth conclude l'operazione di logout UI
+  setLoggingOut(false);
+}, [userId]);
 
   if (pathname === "/login") return null;
 
@@ -115,12 +113,12 @@ const [loggingOut, setLoggingOut] = useState(false);
         <div className="min-w-0">
           <div className="text-sm font-semibold text-slate-900">Diario Attività</div>
           <div className="text-xs text-slate-600 truncate">
-              {(loading || loggingOut) ? "…" : displayName ?? "Non autenticata"}
+              {(loading ) ? "…" : (userId ? (displayName ?? "Utente") : "Non autenticata")}
             </div>
         </div>
 
         <div className="shrink-0 w-10 flex justify-end">
-            {(displayName || loggingOut) ? (
+            {(userId ) ? (
               <Button
                 size="sm"
                 variant="secondary"
