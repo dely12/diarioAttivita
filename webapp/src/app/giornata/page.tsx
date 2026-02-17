@@ -179,7 +179,7 @@ function GiornataInner() {
       setSubmitting(true);
       setSubmitError(null);
       console.log("SUBMIT: getting session");
-       
+       const supabase = getSupabaseBrowser();
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token; 
       if (!token) throw new Error("No session token");
