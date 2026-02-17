@@ -175,11 +175,18 @@ function GiornataInner() {
           return;
     }
 
-    try {
+ //   try {
       setSubmitting(true);
       setSubmitError(null);
       console.log("SUBMIT: getting session");
       const supabase = getSupabaseBrowser();
+      const { data, error } = await supabase.functions.invoke("confirm-day", {
+        body: { date: day.date  },   // stesso payload che mandi ora
+      });
+
+      console.log("invoke result", { data, error });
+
+      /*
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token; 
       if (!token) throw new Error("No session token");
@@ -209,7 +216,7 @@ function GiornataInner() {
     } finally {
       // non serve se navighi sempre, ma lasciamolo corretto
       //setSubmitting(false);
-    }
+   */ //}
 
   }
 
