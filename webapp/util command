@@ -25,3 +25,16 @@ npx supabase secrets set \
   MAIL_TO_OVERRIDE="..." \
   MAIL_BCC="..."
 
+
+Per portare sul progetto SUPABAse cloud le modifiche fatte in http://127.0.0.1:54323/
+npx supabase status (per verificare che sia vivo)
+npx supabase db diff -f add_entriesdesc_view (crea una migration - scegli nome (finisce in supabase.migration verificalo sempre come file)) 
+DEV: npx supabase link --project-ref sjvvnjeotcfdyqlelbck (linkati al progetto su cui vuoi portare le modifiche)
+PROD: npx supabase link --project-ref lawysreioluscsmjvoft
+npx supabase db push
+
+
+
+
+
+
