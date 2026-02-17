@@ -1,7 +1,9 @@
 cd ./webapp
 npx supabase start
+ npx supabase login
 npx supabase functions serve --no-verify-jwt --env-file supabase/.env
 npm run dev
+
 
 
 per precommint:
@@ -12,19 +14,9 @@ DEV: npx supabase functions deploy confirm-day --project-ref sjvvnjeotcfdyqlelbc
 PROD: npx supabase functions deploy confirm-day --project-ref lawysreioluscsmjvoft 
 
 Attivare log della function:
-npx supabase login
-DEV: npx supabase link --project-ref sjvvnjeotcfdyqlelbck
-PROD: npx supabase link --project-ref lawysreioluscsmjvoft
-npx supabase functions logs confirm-day
+andare sulla dashboard
  
-
- Per local verificare:
- Next dev attivo (npm run dev)
-Supabase local attivo (supabase start)
-Edge function servita in locale (supabase functions serve confirm-day)
-
-Per settare e verificare le variabili per edge function su supabase:
-npx supabase functions serve --env-file supabase/.env
+ 
 
 npx supabase link --project-ref TUO_DEV_REF
 npx supabase secrets set \

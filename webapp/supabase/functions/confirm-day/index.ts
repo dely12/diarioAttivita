@@ -54,9 +54,16 @@ serve(async (req) => {
   }
   console.log("STEP 1 - BODY OK", { date });
   // 1) Auth: prendi JWT utente dal client
-  const authHeader = req.headers.get("Authorization") ?? "";
-  const jwt = authHeader.replace("Bearer ", "").trim();
-  if (!jwt) return json({ error: "Missing Authorization" }, 401);
+  const authHeader =  
+  req.headers.get("authorization") ??
+  req.headers.get("Authorization") ??
+  "";
+  console.log("AUTH HEADER RAW", authHeader.slice(0, 30));
+
+  const m = authHeader.match(/^Bearer\s+(.+)$/i);
+const jwt = m?.[1]?.trim() ?? "";
+if (!jwt) return json({ error: "Missing Authorization" }, 401);
+
 
   console.log("STEP 2 - JWT", {
   hasAuthHeader: Boolean(req.headers.get("Authorization")),

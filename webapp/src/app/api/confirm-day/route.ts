@@ -26,6 +26,15 @@ export async function POST(req: Request) {
 
   const body = await req.text();
 
+  console.log("proxy -> supabase", {
+  url: `${supabaseUrl}/functions/v1/confirm-day`,
+  hasApikey: Boolean(supabaseAnonKey),
+  apikeyHead: supabaseAnonKey?.slice(0, 8),
+  hasAuth: Boolean(auth),
+  authHead: auth?.slice(0, 20),
+});
+
+
   const resp = await fetch(`${supabaseUrl}/functions/v1/confirm-day`, {
     method: "POST",
     headers: {
