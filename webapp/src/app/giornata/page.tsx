@@ -158,6 +158,17 @@ function GiornataInner() {
     setAttivita("");
     setMinutes(30);
   }
+  function decodeJwtPayload(jwt: string) {
+  const b64url = jwt.split(".")[1];
+  const b64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
+  const json = decodeURIComponent(
+    atob(b64)
+      .split("")
+      .map(c => "%" + c.charCodeAt(0).toString(16).padStart(2, "0"))
+      .join("")
+  );
+  return JSON.parse(json);
+}
   async function submitDay() { 
     if (!day || submitting) {
           console.log("SUBMIT: aborted by guard");
@@ -172,7 +183,13 @@ function GiornataInner() {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token; 
       if (!token) throw new Error("No session token");
-      
+      const payload = token ? decodeJwtPayload(token) : null;
+      console.log("JWT", {
+        hasToken: !!token,
+        iss: payload?.iss,
+        aud: payload?.aud,
+        exp: payload?.exp,
+      });
  
       const res = await fetch("/api/confirm-day", {
         method: "POST",
