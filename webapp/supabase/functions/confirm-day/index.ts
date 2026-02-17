@@ -3,6 +3,11 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 type Body = { date: string };
 
+const allowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
+  .split(",")
+  .map(s => s.trim())
+  .filter(Boolean);
+
 serve(async (req) => {
   // ✅ Debug temporaneo: togli quando sei a posto
   //console.log("ENV CHECK", {
@@ -12,8 +17,28 @@ serve(async (req) => {
        console.log("ENV CHECK", {
     toOverride:  Deno.env.get("MAIL_TO_OVERRIDE") ,
     bcc:  Deno.env.get("MAIL_BCC") ,
-  });
-  if (req.method !== "POST") return json({ error: "Method Not Allowed" }, 405);
+  }); 
+
+  const origin = req.headers.get("origin");
+  const cors = corsHeaders(origin);
+
+  // Preflight
+  if (req.method === "OPTIONS") {
+    if (cors["Access-Control-Allow-Origin"] === "") {
+      return new Response("CORS blocked", { status: 403 });
+    }
+    return new Response(null, { status: 204, headers: cors });
+  }
+ 
+
+  if (req.method !== "POST") {
+    return json({ error: "Method Not Allowed" }, 405, cors);
+  }
+
+  // Se origin non consentita: blocca anche qui
+  if (cors["Access-Control-Allow-Origin"] === "") {
+    return new Response("CORS blocked", { status: 403 });
+  }
 
   // 0) Parse body
   let body: Body;
@@ -89,8 +114,8 @@ console.log("STEP 3 - AUTH OK", {
 
   // 5) Carica entries per costruire contenuto e hash (prima di log/mail)
   const { data: entries, error: entErr } = await admin
-    .from("entries")
-    .select("codcommessa,codattivita,minutes")
+    .from("entriesdesc")
+    .select("codcommessa,commessa,codattivita,attivita,minutes")
     .eq("day_id", day.id)
     .order("created_at", { ascending: true });
 
@@ -101,7 +126,9 @@ console.log("STEP 3 - AUTH OK", {
 
   const list = (entries ?? []).map((r) => ({
     codcommessa: String(r.codcommessa ?? ""),
+    commessa: String(r.commessa ?? ""),
     codattivita: String(r.codattivita ?? ""),
+    attivita: String(r.attivita ?? ""),
     minutes: Number(r.minutes ?? 0),
   }));
   console.log("STEP 5 - STATUS UPDATED");
@@ -258,18 +285,19 @@ console.log("STEP 3 - AUTH OK", {
   return json({ ok: true, status: "SUBMITTED", mail: mailResult }, 200);
 });
 
-function json(obj: unknown, status = 200) {
+function json(obj: unknown, status = 200, extraHeaders: Record<string, string> = {}) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...extraHeaders },
   });
 }
+
 
 function buildHtml(args: {
   displayName: string;
   date: string;
   totalMinutes: number;
-  entries: Array<{ codcommessa: string; codattivita: string; minutes: number }>;
+  entries: Array<{ codcommessa: string; commessa: string; codattivita: string; attivita: string; minutes: number }>;
 }) {
   const h = Math.floor(args.totalMinutes / 60);
   const m = args.totalMinutes % 60;
@@ -281,9 +309,9 @@ function buildHtml(args: {
       const rm = mm % 60;
       const t = rm === 0 ? `${rh}h` : `${rh}h${String(rm).padStart(2, "0")}`;
       return `<tr>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee">${esc(r.codcommessa ?? "")}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee">${esc(r.codattivita ?? "")}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">${t}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #eee">${esc(r.codcommessa ?? "")} - ${esc(r.commessa ?? "")}</td> 
+        <td style="padding:6px 8px;border-bottom:1px solid #eee">${esc(r.codattivita ?? "")} - ${esc(r.attivita ?? "")}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">${t} ( tot min. ${mm} )</td>
       </tr>`;
     })
     .join("");
@@ -295,7 +323,7 @@ function buildHtml(args: {
   <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">
     <h2>Riepilogo giornata ${args.date}</h2>
     <p><strong>${esc(args.displayName)}</strong></p>
-    <p>Totale: <strong>${totalStr}</strong></p>
+    <p>Totale: <strong>${totalStr}</strong> (tot min. ${args.totalMinutes } )</p>
 
     <table style="border-collapse:collapse;width:100%;max-width:680px">
       <thead>
@@ -326,4 +354,20 @@ async function sha256Hex(text: string) {
   return [...new Uint8Array(digest)]
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+}
+function corsHeaders(origin: string | null) {
+  // Dev: se non configuri ALLOWED_ORIGINS, puoi permettere tutto (solo dev)
+  const allowAll = allowedOrigins.length === 0;
+
+  const okOrigin =
+    allowAll ? "*" :
+    (origin && allowedOrigins.includes(origin)) ? origin :
+    "";
+
+  return {
+    "Access-Control-Allow-Origin": okOrigin,
+    "Vary": "Origin",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
 }

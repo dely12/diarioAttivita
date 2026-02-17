@@ -45,7 +45,7 @@ function GiornataInner() {
   const dateFromQuery = searchParams.get("date");
   const formRef = useRef<HTMLDivElement | null>(null);
   const [submitting, setSubmitting] = useState(false);
-const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
 
   function getDayHint() {
@@ -158,31 +158,42 @@ const [submitError, setSubmitError] = useState<string | null>(null);
     setAttivita("");
     setMinutes(30);
   }
-  async function submitDay() {
-
-   if (!day || submitting) return;
-
-  setSubmitting(true);
-  setSubmitError(null);
-
-  try {
-    const supabase = getSupabaseBrowser();
-    const { data, error } = await supabase.functions.invoke("confirm-day", {
-      body: { date: day.date },
-    });
-
-    if (error) {
-      console.error("confirm-day failed:", error);
-      // anche se fallisce, tu vuoi che il DB sia aggiornato: quindi qui la function DEVE garantire update sempre
-      // se non lo fa, allora è un bug della function.
-      setSubmitError("Errore durante la conferma (mail non inviata)");
+  async function submitDay() { 
+    if (!day || submitting) {
+          console.log("SUBMIT: aborted by guard");
+          return;
     }
 
-    router.push("/riepilogogiornate");
-  } finally {
-    // non serve se navighi sempre, ma lasciamolo corretto
-    setSubmitting(false);
-  }
+    try {
+      setSubmitting(true);
+      setSubmitError(null);
+      console.log("SUBMIT: getting session");
+      const supabase = getSupabaseBrowser();
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token; 
+      if (!token) throw new Error("No session token");
+      
+ 
+      const res = await fetch("/api/confirm-day", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+            
+        body: JSON.stringify({ date: day.date }), // NB: nel tuo Body è { date: string }
+      }); 
+      const json = await res.json().catch(() => ({}));
+       
+      if (!res.ok) throw new Error((json as any)?.error ?? `confirm-day failed (${res.status})`);
+
+      router.push("/riepilogogiornate");
+      return json;
+    } finally {
+      // non serve se navighi sempre, ma lasciamolo corretto
+      //setSubmitting(false);
+    }
+
   }
 
   async function reopenDay() {
@@ -271,11 +282,11 @@ const [submitError, setSubmitError] = useState<string | null>(null);
     })();
   }, [userOk]);
 
-useEffect(() => {
-  if (!submitting) return;
-  document.body.classList.add("overflow-hidden");
-  return () => document.body.classList.remove("overflow-hidden");
-}, [submitting]);
+  useEffect(() => {
+    if (!submitting) return;
+    document.body.classList.add("overflow-hidden");
+    return () => document.body.classList.remove("overflow-hidden");
+  }, [submitting]);
 
 
   useEffect(() => {
@@ -321,158 +332,158 @@ useEffect(() => {
   if (!authChecked) return null;        // oppure “Caricamento…”
   if (!userOk) return null;
   return (
-    <> 
+    <>
 
-    <Stack gap={2}>
-      
-      <FormCard title="Data" actions={
-        <div className="flex items-center gap-2">
-          <StatusBadge status={status} />
+      <Stack gap={2}>
 
-          {status === "SUBMITTED" && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={reopenDay}
-              title="Riapri la giornata per modificare gli inserimenti"
-              leftIcon={<SquarePen size={16} />}
-            >
-            </Button>
-          )}
+        <FormCard title="Data" actions={
+          <div className="flex items-center gap-2">
+            <StatusBadge status={status} />
 
-          {status === "OPEN" && day && (
-            <Button
-              size="sm"
-              onClick={submitDay}
-              disabled={submitting || entries.length === 0 }
-              title="Conferma la giornata"
-              rightIcon={<SendIcon size={16} />}
-            >
-                {submitting ? "Confermo…" : "Conferma"}
-
-            </Button>
-          )}
-        </div>
-      }>
-        <Field
-          label=""
-          hint={getDayHint()}
-        >
-
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => {
-              const d = e.target.value;
-              setSelectedDate(d);
-              router.push(`/giornata?date=${d}`);
-            }}
-          />
-        </Field>
-      </FormCard>
-      <FormCard title="Totale ore inserite" accent={false}
-      >
-
-        <MinutesProgress isEditable={isEditable} totalMinutes={totalMinutes} targetMinutes={480} />
-
-      </FormCard>
-
-      {isEditable && (
-        <div ref={formRef}>
-          <FormCard title="Aggiungi attività" subtitle="Inserisci attività e premi aggiungi." >
-
-
-
-            <Field label="Commessa">
-              <select
-                value={commessa}
-                onChange={(e) => onCommessaChange(e.target.value)}
-                disabled={loadingLookups}
+            {status === "SUBMITTED" && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={reopenDay}
+                title="Riapri la giornata per modificare gli inserimenti"
+                leftIcon={<SquarePen size={16} />}
               >
-                <option value="">{loadingLookups ? "Caricamento..." : "Scegli"}</option>
-                {commesseOpt.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Attività">
-              <select
-                value={attivita}
-                onChange={(e) => setAttivita(e.target.value)}
-                disabled={loadingLookups || !commessa.trim()}
-              >
-                <option value="">
-                  {loadingLookups
-                    ? "Caricamento..."
-                    : !commessa.trim()
-                      ? "Seleziona prima la commessa"
-                      : "Scegli"}
-                </option>
-                {filteredAttivitaOpt.map((o) => (
-
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-
-              </select>
-            </Field>
-
-            <Field label="Minuti">
-              <MinutesInput value={minutes} onChange={setMinutes} />
-            </Field>
-
-            <Button variant="secondary" onClick={onAddOrUpdate} disabled={!userOk || !commessa.trim() || !attivita.trim() || minutes <= 0}>
-              {editingId ? "Salva modifiche" : "Aggiungi"}
-            </Button>
-
-            {editingId && (
-              <Button variant="secondary" size="sm" onClick={cancelEdit}>
-                Annulla
               </Button>
             )}
-          </FormCard>
-        </div>
-      )}
 
+            {status === "OPEN" && day && (
+              <Button
+                size="sm"
+                onClick={submitDay}
+                disabled={submitting || entries.length === 0}
+                title="Conferma la giornata"
+                rightIcon={<SendIcon size={16} />}
+              >
+                {submitting ? "Confermo…" : "Conferma"}
 
-      <FormCard title="Attività inserite" accent={false}>
-        {loadingEntries ? (
-          <p className="gf-help">Caricamento inserimenti</p>
-        ) : (
-          <EntryList entries={entries} onDelete={onDelete}
-            resolveCommessa={(code) => commessaLabelMap.get(code) ?? code}
-            resolveAttivita={(code) => attivitaLabelMap.get(code) ?? code}
-            onEdit={onEdit}
-            editingId={editingId}
-            readOnly={!isEditable}
-          />
-        )}
-      </FormCard>
-    </Stack>
-  {submitting && (
-      <div className="fixed inset-0 z-[100] bg-white/70 backdrop-blur-sm">
-        <div className="absolute inset-0 flex items-center justify-center px-6">
-          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
-            <div className="flex items-center gap-3">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-slate-900">Conferma in corso…</div>
-                <div className="text-xs text-slate-600">Aggiorno la giornata e invio il riepilogo.</div>
-              </div>
-            </div>
-
-            {submitError && (
-              <p className="mt-3 text-sm text-red-700">{submitError}</p>
+              </Button>
             )}
           </div>
+        }>
+          <Field
+            label=""
+            hint={getDayHint()}
+          >
+
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => {
+                const d = e.target.value;
+                setSelectedDate(d);
+                router.push(`/giornata?date=${d}`);
+              }}
+            />
+          </Field>
+        </FormCard>
+        <FormCard title="Totale ore inserite" accent={false}
+        >
+
+          <MinutesProgress isEditable={isEditable} totalMinutes={totalMinutes} targetMinutes={480} />
+
+        </FormCard>
+
+        {isEditable && (
+          <div ref={formRef}>
+            <FormCard title="Aggiungi attività" subtitle="Inserisci attività e premi aggiungi." >
+
+
+
+              <Field label="Commessa">
+                <select
+                  value={commessa}
+                  onChange={(e) => onCommessaChange(e.target.value)}
+                  disabled={loadingLookups}
+                >
+                  <option value="">{loadingLookups ? "Caricamento..." : "Scegli"}</option>
+                  {commesseOpt.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Attività">
+                <select
+                  value={attivita}
+                  onChange={(e) => setAttivita(e.target.value)}
+                  disabled={loadingLookups || !commessa.trim()}
+                >
+                  <option value="">
+                    {loadingLookups
+                      ? "Caricamento..."
+                      : !commessa.trim()
+                        ? "Seleziona prima la commessa"
+                        : "Scegli"}
+                  </option>
+                  {filteredAttivitaOpt.map((o) => (
+
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+
+                </select>
+              </Field>
+
+              <Field label="Minuti">
+                <MinutesInput value={minutes} onChange={setMinutes} />
+              </Field>
+
+              <Button variant="secondary" onClick={onAddOrUpdate} disabled={!userOk || !commessa.trim() || !attivita.trim() || minutes <= 0}>
+                {editingId ? "Salva modifiche" : "Aggiungi"}
+              </Button>
+
+              {editingId && (
+                <Button variant="secondary" size="sm" onClick={cancelEdit}>
+                  Annulla
+                </Button>
+              )}
+            </FormCard>
+          </div>
+        )}
+
+
+        <FormCard title="Attività inserite" accent={false}>
+          {loadingEntries ? (
+            <p className="gf-help">Caricamento inserimenti</p>
+          ) : (
+            <EntryList entries={entries} onDelete={onDelete}
+              resolveCommessa={(code) => commessaLabelMap.get(code) ?? code}
+              resolveAttivita={(code) => attivitaLabelMap.get(code) ?? code}
+              onEdit={onEdit}
+              editingId={editingId}
+              readOnly={!isEditable}
+            />
+          )}
+        </FormCard>
+      </Stack>
+      {submitting && (
+        <div className="fixed inset-0 z-[100] bg-white/70 backdrop-blur-sm">
+          <div className="absolute inset-0 flex items-center justify-center px-6">
+            <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-slate-900">Conferma in corso…</div>
+                  <div className="text-xs text-slate-600">Aggiorno la giornata e invio il riepilogo.</div>
+                </div>
+              </div>
+
+              {submitError && (
+                <p className="mt-3 text-sm text-red-700">{submitError}</p>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-    )}
-</>
+      )}
+    </>
   );
 
 

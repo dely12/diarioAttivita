@@ -7,4 +7,29 @@ npm run dev
 per precommint:
 npm run build
 
-Per settare e verificare le variabili per next function su supabase:
+deploy function su supabase dev/prod (mettere l'id project )
+DEV: npx supabase functions deploy confirm-day --project-ref sjvvnjeotcfdyqlelbck 
+PROD: npx supabase functions deploy confirm-day --project-ref lawysreioluscsmjvoft 
+
+Attivare log della function:
+npx supabase login
+DEV: npx supabase link --project-ref sjvvnjeotcfdyqlelbck
+PROD: npx supabase link --project-ref lawysreioluscsmjvoft
+npx supabase functions logs confirm-day
+ 
+
+ Per local verificare:
+ Next dev attivo (npm run dev)
+Supabase local attivo (supabase start)
+Edge function servita in locale (supabase functions serve confirm-day)
+
+Per settare e verificare le variabili per edge function su supabase:
+npx supabase functions serve --env-file supabase/.env
+
+npx supabase link --project-ref TUO_DEV_REF
+npx supabase secrets set \
+  GMAIL_WEBAPP_URL="..." \
+  GMAIL_WEBAPP_KEY="..." \
+  MAIL_TO_OVERRIDE="..." \
+  MAIL_BCC="..."
+
