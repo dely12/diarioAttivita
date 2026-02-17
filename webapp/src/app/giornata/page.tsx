@@ -175,7 +175,7 @@ function GiornataInner() {
           return;
     }
 
- //   try {
+    try {
       setSubmitting(true);
       setSubmitError(null);
       console.log("SUBMIT: getting session");
@@ -209,7 +209,7 @@ function GiornataInner() {
     } finally {
       // non serve se navighi sempre, ma lasciamolo corretto
       //setSubmitting(false);
-   */ //}
+   }
 
   }
 
