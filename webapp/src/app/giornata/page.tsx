@@ -185,7 +185,8 @@ function GiornataInner() {
       });
 
       console.log("invoke result", { data, error });
-
+      router.push("/riepilogogiornate");
+      
       /*
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token; 
