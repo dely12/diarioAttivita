@@ -6,12 +6,12 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
     console.log("API /confirm-day HIT");
 
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     return NextResponse.json(
-      { ok: false, error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" },
+      { ok: false, error: "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY" },
       { status: 500 }
     );
   }
