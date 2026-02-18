@@ -34,6 +34,18 @@ PROD: npx supabase link --project-ref lawysreioluscsmjvoft
 npx supabase db push
 
 
+---branch git
+git status                 # controlla che sia pulito
+git branch                 # vedi dove sei (asterisco = branch corrente)
+git checkout -b prod       # crea e passa a prod (partendo dall’attuale commit)
+git push -u origin prod    # crea il branch su GitHub e imposta upstream
+git checkout main          # torna su main per lavorare
+--per pushare in prod:
+git checkout prod --ti metti su prod
+git merge main
+git push
+---ma la cosa va fatta direttamente da git che fa una PR e fa merge storicizzata!
+
 
 
 
